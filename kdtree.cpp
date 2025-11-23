@@ -9,7 +9,10 @@ Randomly built kd tree
 Insertion query 
 ~~~ done ~~~ Exact match query (basically search)
 Partial match query
-Region query
+~~~ done ~~~ Region query
+    - in region
+    - found
+    - bounds intersect region
 NN match query
 Deletion 
 Optimal tree
@@ -89,6 +92,62 @@ bool searchRecursive(node* root, int point[], unsigned depth){
 // function to search for a point
 bool search(node* root, int point[]){
     return searchRecursive(root, point, 0);
+}
+
+// helper function to print points inside region
+void found(node *p){
+    cout << "(";
+    for(int i = 0; i < k; i++){
+        cout << p->point[i];
+        if(i+1 < k) cout << ", ";
+    }
+    cout << ")\n";
+}
+
+// checks if a specific point is inside region
+bool inRegion(node *p, double RECDEF[]){
+    for(int i = 0; i < k; i++){
+        if(p->point[i] < RECDEF[2*i] || p->point[i] > RECDEF[2*i+1])
+            return false;
+    }
+    return true;
+}
+
+// checks if bounds of the subtree intersect(partially lie inside) queried boundary
+bool boundsIntersectRegion(double b[], double RECDEF[]){
+    for(int i = 0; i < k; i++){
+        if(b[2*i] > RECDEF[2*i+1] || b[2*i+1] < RECDEF[2*i])
+            return false;
+    }
+    return true;
+}
+
+void copyBounds(double a[], double b[], int size){
+    for(int i = 0; i < size; i++){
+        b[i] = a[i];
+    }    
+}
+
+// find all points inside given query region
+void regionSearch(node *p, double b[], double RECDEF[], int depth){
+    if(p == nullptr) return;
+
+    if(inRegion(p, RECDEF))
+        found(p);
+
+    int cd = depth % k;
+    double boundsLeft[2*k], boundsRight[2*k];
+    copyBounds(b, boundsLeft, 2*k);
+    copyBounds(b, boundsRight, 2*k);
+
+    boundsLeft[2*cd + 1] = p -> point[cd];
+    boundsRight[2*cd] = p -> point[cd];
+
+    if(p->left && boundsIntersectRegion(boundsLeft, RECDEF))
+        regionSearch(p->left, boundsLeft, RECDEF, depth + 1);
+
+    if(p->right && boundsIntersectRegion(boundsRight, RECDEF))
+        regionSearch(p->right, boundsRight, RECDEF, depth + 1);
 }
 
 //driver
