@@ -1,4 +1,6 @@
 #include <iostream>
+#include <limits>
+#include <cmath>
 using namespace std;
 
 /*To do
@@ -13,12 +15,13 @@ Partial match query
     - in region
     - found
     - bounds intersect region
-NN match query
+~~~done~~~ NN match query
 Deletion 
 Optimal tree
 Application 
 Area of further research~~ 
-extra: radius query, bounding box
+extra: ~~~done ~~~radius query, 
+bounding box
 */
 
 const int k = 2;
@@ -150,8 +153,155 @@ void regionSearch(node *p, double b[], double RECDEF[], int depth){
         regionSearch(p->right, boundsRight, RECDEF, depth + 1);
 }
 
-//driver
-int main(){
+// --- Nearest Neighbor (NN) search helpers ---
 
+// squared Euclidean distance between two k-d points
+double distanceSquared(const int a[], const int b[]){
+    double dist = 0.0;
+    for(int i = 0; i < k; i++){
+        double diff = double(a[i]) - double(b[i]);
+        dist += diff * diff;
+    }
+    return dist;
 }
 
+// Recursive NN search
+void nearestNeighborRecursive(node* root, int target[], unsigned depth, node*& best, double& bestDist){
+    if(root == nullptr) return;
+
+    // compute distance to current node
+    double d = distanceSquared(root->point, target);
+    if(d < bestDist){
+        bestDist = d;
+        best = root;
+    }
+
+    unsigned cd = depth % k;
+
+    // Decide which side to visit first
+    node* nearChild = nullptr;
+    node* farChild  = nullptr;
+    if(target[cd] < root->point[cd]){
+        nearChild = root->left;
+        farChild = root->right;
+    } else {
+        nearChild = root->right;
+        farChild = root->left;
+    }
+
+    // Recurse into the near side first
+    nearestNeighborRecursive(nearChild, target, depth + 1, best, bestDist);
+
+    // Check whether we need to visit the far side:
+    // If distance to splitting plane could be less than bestDist
+    double diff = double(target[cd]) - double(root->point[cd]);
+    double planeDist = diff * diff; // squared distance to plane
+    if(planeDist < bestDist){
+        nearestNeighborRecursive(farChild, target, depth + 1, best, bestDist);
+    }
+}
+
+// Wrapper that returns the nearest node pointer (or nullptr if tree empty)
+node* nearestNeighbor(node* root, int target[]){
+    if(root == nullptr) return nullptr;
+    node* best = nullptr;
+    double bestDist = numeric_limits<double>::infinity();
+    nearestNeighborRecursive(root, target, 0, best, bestDist);
+    return best;
+}
+
+// -------------------- RADIUS QUERY -------------------- //
+
+// Query all points within a radius (circle) from target[]
+void radiusQueryRecursive(node* root, int target[], double radiusSquared,
+                          unsigned depth)
+{
+    if(root == nullptr) return;
+
+    // Check if current node lies inside circle
+    double d = distanceSquared(root->point, target);
+    if(d <= radiusSquared){
+        cout << "(";
+        for(int i = 0; i < k; i++){
+            cout << root->point[i];
+            if(i+1 < k) cout << ", ";
+        }
+        cout << ")\n";
+    }
+
+    unsigned cd = depth % k;
+
+    // Always explore the near side
+    if(target[cd] < root->point[cd])
+    {
+        radiusQueryRecursive(root->left, target, radiusSquared, depth+1);
+
+        // Check if far side intersects the circle
+        double diff = target[cd] - root->point[cd];
+        if(diff*diff <= radiusSquared)
+            radiusQueryRecursive(root->right, target, radiusSquared, depth+1);
+    }
+    else
+    {
+        radiusQueryRecursive(root->right, target, radiusSquared, depth+1);
+
+        double diff = target[cd] - root->point[cd];
+        if(diff*diff <= radiusSquared)
+            radiusQueryRecursive(root->left, target, radiusSquared, depth+1);
+    }
+}
+
+// Wrapper
+void radiusQuery(node* root, int target[], double radius){
+    double radiusSquared = radius * radius;
+    cout << "Points inside radius " << radius << " from (";
+    for(int i = 0; i < k; i++){
+        cout << target[i];
+        if(i+1 < k) cout << ", ";
+    }
+    cout << "):\n";
+
+    radiusQueryRecursive(root, target, radiusSquared, 0);
+}
+
+// driver
+int main(){
+    node* root = nullptr;
+    int points[][k] = {
+        {3, 6},
+        {17, 15},
+        {13, 15},
+        {6, 12},
+        {9, 1},
+        {2, 7},
+        {10, 19}
+    };
+
+    const int nPoints = sizeof(points) / sizeof(points[0]);
+    for(int i = 0; i < nPoints; ++i)
+        root = insert(root, points[i]);
+
+    int target[k] = {9, 2};
+    node* nn = nearestNeighbor(root, target);
+    int query2[k] = {9, 2};
+double R = 10.0;
+
+cout << "\nRadius Query:\n";
+radiusQuery(root, query2, R);
+
+
+    if(nn){
+        cout << "Query point: (" << target[0] << ", " << target[1] << ")\n";
+        cout << "Nearest neighbor: (";
+        for(int i = 0; i < k; i++){
+            cout << nn->point[i];
+            if(i+1 < k) cout << ", ";
+        }
+        cout << ")\n";
+        cout << "Squared distance = " << distanceSquared(nn->point, target) << "\n";
+    } else {
+        cout << "Tree is empty.\n";
+    }
+
+    return 0;
+}
