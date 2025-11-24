@@ -8,9 +8,9 @@ using namespace std;
 ~~~ done ~~~ Insertion 
 Randomly built kd tree
 ~~~ done ~~~ Searching (exact match queries)
-Insertion query 
+~~~ done ~~~ Insertion query 
 ~~~ done ~~~ Exact match query (basically search)
-Partial match query
+~~~ done ~~~ Partial match query
 ~~~ done ~~~ Region query
     - in region
     - found
@@ -152,6 +152,67 @@ void regionSearch(node *p, double b[], double RECDEF[], int depth){
     if(p->right && boundsIntersectRegion(boundsRight, RECDEF))
         regionSearch(p->right, boundsRight, RECDEF, depth + 1);
 }
+// -------------------- INSERTION QUERY -------------------- //
+
+// Wrapper for "insertion query":
+//  - checks if point already exists
+//  - if not, inserts it and prints what happened
+node* insertionQuery(node* root, int point[]){
+    if(search(root, point)){
+        cout << "Point (";
+        for(int i = 0; i < k; i++){
+            cout << point[i];
+            if(i+1 < k) cout << ", ";
+        }
+        cout << ") already exists in the tree.\n";
+        return root;
+    }
+
+    root = insert(root, point);
+
+    cout << "Inserted point: (";
+    for(int i = 0; i < k; i++){
+        cout << point[i];
+        if(i+1 < k) cout << ", ";
+    }
+    cout << ")\n";
+
+    return root;
+}
+
+// Check if a node matches the partial query
+bool matchesPartial(node* p, int query[], bool specified[]){
+    for(int i = 0; i < k; i++){
+        if(specified[i] && p->point[i] != query[i])
+            return false;
+    }
+    return true;
+}
+// Recursive partial match search in k-d tree
+void partialMatchRecursive(node* root, int query[], bool specified[],
+                           unsigned depth)
+{
+    if(root == nullptr) return;
+
+    // If this node matches the pattern, print it
+    if(matchesPartial(root, query, specified)){
+        found(root);   // reuses your existing "found" printer
+    }
+
+    unsigned cd = depth % k;
+
+    // If this coordinate is not specified (wildcard), we must search both sides
+    if(!specified[cd]){
+        partialMatchRecursive(root->left,  query, specified, depth + 1);
+        partialMatchRecursive(root->right, query, specified, depth + 1);
+    } else {
+        // Coordinate is specified: prune like normal kd-tree search
+        if(query[cd] < root->point[cd])
+            partialMatchRecursive(root->left,  query, specified, depth + 1);
+        else
+            partialMatchRecursive(root->right, query, specified, depth + 1);
+    }
+}
 
 // --- Nearest Neighbor (NN) search helpers ---
 
@@ -280,6 +341,36 @@ int main(){
     const int nPoints = sizeof(points) / sizeof(points[0]);
     for(int i = 0; i < nPoints; ++i)
         root = insert(root, points[i]);
+  
+    int insPoint[k];
+    cout << "Enter point for insertion query:\n";
+    for(int d = 0; d < k; d++){
+        cout << "  Coordinate " << d << ": ";
+        cin >> insPoint[d];
+    }
+    root = insertionQuery(root, insPoint);
+
+    int pmQuery[k];
+    bool specified[k];
+
+    cout << "\nPartial match query:\n";
+    for(int d = 0; d < k; d++){
+        int flag;
+        cout << "Is coordinate " << d
+             << " specified? (1 = yes, 0 = wildcard): ";
+        cin >> flag;
+
+        specified[d] = (flag != 0);
+
+        if(specified[d]){
+            cout << "  Enter value for coordinate " << d << ": ";
+            cin >> pmQuery[d];
+        } else {
+            pmQuery[d] = 0;
+        }
+    }
+
+    partialMatchQuery(root, pmQuery, specified);
 
     int target[k] = {9, 2};
     node* nn = nearestNeighbor(root, target);
@@ -305,3 +396,4 @@ radiusQuery(root, query2, R);
 
     return 0;
 }
+
