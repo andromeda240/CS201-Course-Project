@@ -329,6 +329,104 @@ void partialMatchQuery(node* root, int query[], bool specified[]){
     partialMatchRecursive(root, query, specified, 0);
 }
 
+node* findMin(node* root, int dim, int depth) {
+    if(root == nullptr) return nullptr;
+
+    int cd = depth % k;
+
+    // If this node splits on the same dimension,
+    // minimum must be in the LEFT subtree only
+    if(cd == dim) {
+        if(root->left == nullptr) return root;
+        return findMin(root->left, dim, depth + 1);
+    }
+
+    // Otherwise, minimum can be in ANY subtree or root
+    node* leftMin  = findMin(root->left, dim, depth + 1);
+    node* rightMin = findMin(root->right, dim, depth + 1);
+
+    node* minNode = root;
+
+    if(leftMin && leftMin->point[dim] < minNode->point[dim])
+        minNode = leftMin;
+    if(rightMin && rightMin->point[dim] < minNode->point[dim])
+        minNode = rightMin;
+
+    return minNode;
+}
+node* findMax(node* root, int dim, int depth) {
+    if(root == nullptr) return nullptr;
+
+    int cd = depth % k;
+
+    if(cd == dim) {
+        if(root->right == nullptr) return root;
+        return findMax(root->right, dim, depth + 1);
+    }
+
+    node* leftMax  = findMax(root->left, dim, depth + 1);
+    node* rightMax = findMax(root->right, dim, depth + 1);
+
+    node* maxNode = root;
+
+    if(leftMax && leftMax->point[dim] > maxNode->point[dim])
+        maxNode = leftMax;
+    if(rightMax && rightMax->point[dim] > maxNode->point[dim])
+        maxNode = rightMax;
+
+    return maxNode;
+}
+node* deleteNode(node* root, int point[], int depth = 0) {
+    if(root == nullptr)
+        return nullptr;
+
+    int cd = depth % k;
+
+    // If this is the node to delete
+    if(arePointsSame(root->point, point)) {
+
+        // CASE 1 : Node has right subtree
+        if(root->right) {
+            node* rep = findMin(root->right, cd, depth + 1);
+            
+            // Copy replacement data into root
+            for(int i = 0; i < k; i++)
+                root->point[i] = rep->point[i];
+
+            // Delete the replacement from right subtree
+            root->right = deleteNode(root->right, rep->point, depth + 1);
+        }
+
+        // CASE 2 : No right subtree, use left subtree
+        else if(root->left) {
+            node* rep = findMax(root->left, cd, depth + 1);
+
+            // Copy replacement data
+            for(int i = 0; i < k; i++)
+                root->point[i] = rep->point[i];
+
+            // Delete replacement node from left subtree
+            root->left = deleteNode(root->left, rep->point, depth + 1);
+        }
+
+        // CASE 3 : Leaf node
+        else {
+            delete root;
+            return nullptr;
+        }
+
+        return root;
+    }
+
+    // Traverse the tree normally
+    if(point[cd] < root->point[cd])
+        root->left = deleteNode(root->left, point, depth + 1);
+    else
+        root->right = deleteNode(root->right, point, depth + 1);
+
+    return root;
+}
+
 // driver
 int main(){
     node* root = nullptr;
@@ -398,6 +496,20 @@ radiusQuery(root, query2, R);
         cout << "Tree is empty.\n";
     }
 
+
+     int p1[] = {3, 6};
+    int p2[] = {17, 15};
+    int p3[] = {13, 15};
+    int p4[] = {6, 12};
+
+    root = insert(root, p1);
+    root = insert(root, p2);
+    root = insert(root, p3);
+    root = insert(root, p4);
+
+    int toDelete[] = {17, 15};
+    root = deleteNode(root, toDelete);
+    
     return 0;
 }
 
