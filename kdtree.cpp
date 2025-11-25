@@ -324,6 +324,10 @@ void radiusQuery(node* root, int target[], double radius){
 
     radiusQueryRecursive(root, target, radiusSquared, 0);
 }
+void partialMatchQuery(node* root, int query[], bool specified[]){
+    cout << "Partial match results:\n";
+    partialMatchRecursive(root, query, specified, 0);
+}
 
 // driver
 int main(){
