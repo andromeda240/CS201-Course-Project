@@ -16,8 +16,8 @@ Randomly built kd tree
     - found
     - bounds intersect region
 ~~~done~~~ NN match query
-Deletion 
-Optimal tree
+~~~ done ~~~ Deletion 
+~~~ done ~~~ Optimal tree
 Application 
 Area of further research~~ 
 extra: ~~~done ~~~radius query, 
@@ -30,6 +30,7 @@ const int k = 2;
 struct node
 {
     int point[k];
+    int disc;
     node *left, *right;
 };
 
@@ -427,6 +428,70 @@ node* deleteNode(node* root, int point[], int depth = 0) {
     return root;
 }
 
+// ---- helper: swap two points in array ----
+void swapPoints(int a[], int b[], int k) {
+    for (int i = 0; i < k; i++) {
+        int temp = a[i];
+        a[i] = b[i];
+        b[i] = temp;
+    }
+}
+
+// ---- partial selection to find median by dim (no STL) ----
+int findMedianIndex(int A[][10], int n, int dim, int k) {
+    // simple O(n^2) selection sort until median index
+    int mid = n / 2;
+    for (int i = 0; i <= mid; i++) {
+        int minIndex = i;
+        for (int j = i+1; j < n; j++) {
+            if (A[j][dim] < A[minIndex][dim])
+                minIndex = j;
+        }
+        swapPoints(A[i], A[minIndex], k);
+    }
+    return mid;
+}
+
+// ---- OPTIMIZE: builds balanced kd-tree ----
+node* OPTIMIZE(int A[][10], int n, int dim, int k) {
+    if (n == 0)
+        return nullptr;
+
+    // 1. find median
+    int medianIndex = findMedianIndex(A, n, dim, k);
+
+    // 2. create node
+    node* root = new node();
+    for (int i = 0; i < k; i++)
+        root->point[i] = A[medianIndex][i];
+    root->disc = dim;
+
+    // 3. split into left and right arrays
+    int AL[1000][10], AH[1000][10];
+    int leftN = 0, rightN = 0;
+
+    for (int i = 0; i < n; i++) {
+        if (i == medianIndex) continue;
+
+        if (A[i][dim] < A[medianIndex][dim]) {
+            for (int d = 0; d < k; d++)
+                AL[leftN][d] = A[i][d];
+            leftN++;
+        } else {
+            for (int d = 0; d < k; d++)
+                AH[rightN][d] = A[i][d];
+            rightN++;
+        }
+    }
+
+    // 4. recursive build
+    int nextDim = (dim + 1) % k;
+    root->left  = OPTIMIZE(AL, leftN,  nextDim, k);
+    root->right = OPTIMIZE(AH, rightN, nextDim, k);
+
+    return root;
+}
+
 // driver
 int main(){
     node* root = nullptr;
@@ -509,7 +574,7 @@ radiusQuery(root, query2, R);
 
     int toDelete[] = {17, 15};
     root = deleteNode(root, toDelete);
-    
+
     return 0;
 }
 
