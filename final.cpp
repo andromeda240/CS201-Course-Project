@@ -417,27 +417,33 @@ int main() {
         root = insert(root, points[i]);
 
     while(true) {
-        cout << "\n========= MENU =========\n";
-        cout << "1. Insert point\n";
-        cout << "2. Search point\n";
-        cout << "3. Delete point\n";
-        cout << "4. Region Search\n";
-        cout << "5. Partial Match\n";
-        cout << "6. Nearest Neighbor\n";
-        cout << "7. Radius Query\n";
-        cout << "8. Exit\n";
+        cout << "Choose option:\n";
+        cout << "1. Print tree using BFS\n";
+        cout << "2. Insert point\n";
+        cout << "3. Search point\n";
+        cout << "4. Delete point\n";
+        cout << "5. Region Search\n";
+        cout << "6. Partial Match\n";
+        cout << "7. Nearest Neighbor\n";
+        cout << "8. Radius Query\n";
+        cout << "9. Exit\n";
         cout << "Choose option: ";
 
         int choice;
         cin >> choice;
 
-        if(choice == 8) break;
+        if(choice == 9) break;
 
         int pt[k];
 
         switch(choice) {
+        
+        case 1:     //PRINT TREE
+            cout << "Nodes in the tree:\n";
+            printTreeLevelOrder(root);
+            break;
 
-        case 1:     // INSERT
+        case 2:     // INSERT
             cout << "Enter point to insert:\n";
             for(int d = 0; d < k; d++){
                 cout << "  Coord " << d << ": ";
@@ -448,7 +454,7 @@ int main() {
             printTreeLevelOrder(root);
             break;
 
-        case 2:     // SEARCH
+        case 3:     // SEARCH
             cout << "Enter point to search:\n";
             for(int d = 0; d < k; d++){
                 cout << "  Coord " << d << ": ";
@@ -457,7 +463,7 @@ int main() {
             cout << (search(root, pt) ? "Found.\n" : "Not found.\n");
             break;
 
-        case 3:     // DELETE
+        case 4:     // DELETE
             cout << "Enter point to delete:\n";
             for(int d = 0; d < k; d++){
                 cout << "  Coord " << d << ": ";
@@ -468,7 +474,7 @@ int main() {
             printTreeLevelOrder(root);
             break;
 
-        case 4: {   // REGION SEARCH
+        case 5: {   // REGION SEARCH
             double RECDEF[2*k];
             cout << "Enter region bounds [low, high] for each dimension:\n";
             for(int i = 0; i < k; i++){
@@ -487,7 +493,7 @@ int main() {
             break;
         }
 
-        case 5: {   // PARTIAL MATCH
+        case 6: {   // PARTIAL MATCH
             int q[k];
             cout << "Partial match query:\n";
             for(int i = 0; i < k; i++){
@@ -506,7 +512,7 @@ int main() {
             break;
         }
 
-        case 6: {   // NEAREST NEIGHBOR
+        case 7: {   // NEAREST NEIGHBOR
             cout << "Enter target point:\n";
             for(int i = 0; i < k; i++){
                 cout << "  Coord " << i << ": ";
@@ -524,7 +530,7 @@ int main() {
             break;
         }
 
-        case 7: {   // RADIUS QUERY
+        case 8: {   // RADIUS QUERY
             double R;
             cout << "Enter center point:\n";
             for(int i = 0; i < k; i++){
