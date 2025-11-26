@@ -364,6 +364,37 @@ node* optimiseTree(int A[][10], int n, int dim, int k) {
     return root;
 }
 
+void printTreeLevelOrder(node* root) {
+    if (root == nullptr){
+        cout << "[Empty tree]\n";
+        return;
+    }
+
+    node* Q[1000];
+    int front = 0, rear = 0;
+
+    Q[rear++] = root;
+
+    while (front < rear) {
+        int levelSize = rear - front;
+        cout << "Level: ";
+
+        for (int i = 0; i < levelSize; i++) {
+            node* cur = Q[front++];
+
+            cout << "(" 
+                 << cur->point[0] << ", "
+                 << cur->point[1] << ") [d=" 
+                 << cur->disc << "]  ";
+
+            if (cur->left)  Q[rear++] = cur->left;
+            if (cur->right) Q[rear++] = cur->right;
+        }
+        cout << "\n";
+    }
+
+}
+
 // driver
 int main() {
     node* root = nullptr;
@@ -414,6 +445,7 @@ int main() {
             }
             root = insert(root, pt);
             cout << "Inserted.\n";
+            printTreeLevelOrder(root);
             break;
 
         case 2:     // SEARCH
@@ -433,6 +465,7 @@ int main() {
             }
             root = deleteNode(root, pt);
             cout << "Deleted (if existed).\n";
+            printTreeLevelOrder(root);
             break;
 
         case 4: {   // REGION SEARCH
