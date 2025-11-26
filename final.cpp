@@ -364,6 +364,32 @@ node* optimiseTree(int A[][10], int n, int dim, int k) {
     return root;
 }
 
+void collectPoints(node* p, int A[][10], int &idx, int k) {
+    if (!p) return;
+
+    for (int i = 0; i < k; i++)
+        A[idx][i] = p->point[i];
+    idx++;
+
+    collectPoints(p->left, A, idx, k);
+    collectPoints(p->right, A, idx, k);
+}
+
+void optimise(node* &root) {
+    if (!root) {
+        cout << "Tree is empty, nothing to optimise.\n";
+        return;
+    }
+
+    int A[1000][10];
+    int n = 0;
+
+    collectPoints(root, A, n, k);
+    root = optimiseTree(A, n, 0, k);
+
+    cout << "\nOptimised KD-tree successfully built.\n";
+}
+
 void printTreeLevelOrder(node* root) {
     if (root == nullptr){
         cout << "[Empty tree]\n";
@@ -426,13 +452,14 @@ int main() {
         cout << "6. Partial Match\n";
         cout << "7. Nearest Neighbor\n";
         cout << "8. Radius Query\n";
-        cout << "9. Exit\n";
+        cout << "9. Optimise tree\n";
+        cout << "10. Exit\n";
         cout << "Choose option: ";
 
         int choice;
         cin >> choice;
 
-        if(choice == 9) break;
+        if(choice == 10) break;
 
         int pt[k];
 
@@ -542,6 +569,12 @@ int main() {
 
             cout << "Points inside radius:\n";
             radiusQuery(root, pt, R);
+            break;
+        }
+
+        case 9: {
+            optimise(root);
+            printTreeLevelOrder(root);
             break;
         }
 
